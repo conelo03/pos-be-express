@@ -12,7 +12,7 @@ const operatorMap = {
   '$ilike': Op.iLike
 }
 
-function buildWhere(filter, filterBy, group) {
+function buildWhere(filter, filterBy, grouping) {
   if (!filter || !filterBy) return {}
 
   const conditions = filterBy.map((cond, i) => {
@@ -34,9 +34,18 @@ function buildWhere(filter, filterBy, group) {
 
   if (!conditions.length) return {}
 
-  // group operator: 'and' / 'or'
-  const groupOp = group && group[0] && group[0].toLowerCase() === 'or' ? Op.or : Op.and
-  return { [groupOp]: conditions }
+  if (!grouping || !grouping.length) {
+    return { [Op.and]: conditions }; // default
+  }
+
+  // 🔥 fold conditions step by step
+  let result = conditions[0];
+  for (let i = 0; i < grouping.length; i++) {
+    const op = grouping[i].toLowerCase() === "or" ? Op.or : Op.and
+    result = { [op]: [result, conditions[i + 1]] }
+  }
+
+  return result
 }
 
 function buildOrder(orderBy, order) {
@@ -49,14 +58,15 @@ function buildOrder(orderBy, order) {
 }
 
 function buildCondition(query) {
-  let { filter, filterBy, group, orderBy, order } = query
+  let { filter, filterBy, grouping, orderBy, order } = query
 
   if (filterBy && !Array.isArray(filterBy)) filterBy = [filterBy]
   if (filter && !Array.isArray(filter)) filter = [filter]
+  if (grouping && !Array.isArray(grouping)) grouping = [grouping]
   if (orderBy && !Array.isArray(orderBy)) orderBy = [orderBy]
   if (order && !Array.isArray(order)) order = [order]
 
-  const where = buildWhere(filter, filterBy, group)
+  const where = buildWhere(filter, filterBy, grouping)
   const orderArray = buildOrder(orderBy, order)
 
   return { where, orderArray }

@@ -27,7 +27,7 @@ router.post('/', verifyToken, async (req, res) => {
   }
 })
 
-router.get('/', async (req, res) => {
+router.get('/', verifyToken, async (req, res) => {
   try {
     let { page, limit, ...query } = req.query
 
@@ -61,7 +61,7 @@ router.get('/', async (req, res) => {
   }
 })
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', verifyToken, async (req, res) => {
   try {
     const product = await Product.findByPk(req.params.id)
     if (!product) return error(res, 'Product not found', [], 400)
